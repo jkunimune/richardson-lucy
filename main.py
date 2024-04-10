@@ -11,27 +11,28 @@ from scipy import signal
 def main():
 	np.random.seed(0)
 
-	x_edges = np.linspace(0, 5, 201)
-	Δx = x_edges[1] - x_edges[0]
+	x_kernel = np.linspace(0, 5, 201)
+	Δx = x_kernel[1] - x_kernel[0]
+	y_kernel = shoe_curve(x_kernel, 0.5, 1.0, +0.8, 10000)
 
-	y_kernel = shoe_curve(x_edges, 0.5, 1.0, +0.8, 10000)
+	x_source = x_kernel
+	y_source = bell_curve(x_source, 0.3, 0.6, 4) + bell_curve(x_source, 0.7, 0.8, 2) + shoe_curve(x_source, 2.4, 1.2, -0.6, 3)
 
-	y_source = bell_curve(x_edges, 0.3, 0.6, 4) + bell_curve(x_edges, 0.7, 0.8, 2) + shoe_curve(x_edges, 2.4, 1.2, -0.6, 3)
-
-	y_image = signal.convolve(y_source, y_kernel*Δx, mode="full")[:x_edges.size]
+	x_image = np.concatenate([x_kernel[:-1], x_kernel[-1] + x_source])
+	y_image = signal.convolve(y_source, y_kernel*Δx, mode="full")
 	y_data = np.random.poisson((y_image[0:-1] + y_image[1:])*Δx)
 
 	fig, (image_ax, kernel_ax, source_ax) = plt.subplots(3, 1, facecolor="none")
 
-	image_ax.fill_between(np.repeat(x_edges, 2)[1:-1], 0, np.repeat(y_data, 2))
+	image_ax.fill_between(np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2))
 	image_ax.set_xlim(0, 5)
 	image_ax.set_ylim(0, None)
 
-	kernel_ax.fill_between(x_edges, 0, y_kernel)
+	kernel_ax.fill_between(x_kernel, 0, y_kernel)
 	kernel_ax.set_xlim(0, 5)
 	kernel_ax.set_ylim(0, None)
 
-	source_ax.fill_between(x_edges, 0, y_source)
+	source_ax.fill_between(x_source, 0, y_source)
 	source_ax.set_xlim(0, 5)
 	source_ax.set_ylim(0, None)
 
