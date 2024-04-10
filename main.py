@@ -5,22 +5,22 @@ To view a copy of this license, visit <https://creativecommons.org/publicdomain/
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
-from scipy import signal
+from scipy import signal, integrate
 
 
 def main():
 	np.random.seed(0)
 
-	x_kernel = np.linspace(0, 5, 201)
+	x_kernel = np.linspace(0, 6, 201)
 	Δx = x_kernel[1] - x_kernel[0]
 	y_kernel = shoe_curve(x_kernel, 0.5, 1.0, +0.8, 10000)
 
-	x_source = x_kernel
+	x_source = np.linspace(0, 3, 101)
 	y_source = bell_curve(x_source, 0.3, 0.6, 4) + bell_curve(x_source, 0.7, 0.8, 2) + shoe_curve(x_source, 2.4, 1.2, -0.6, 3)
 
 	x_image = np.concatenate([x_kernel[:-1], x_kernel[-1] + x_source])
 	y_image = signal.convolve(y_source, y_kernel*Δx, mode="full")
-	y_data = np.random.poisson((y_image[0:-1] + y_image[1:])*Δx)
+	y_data = np.random.poisson((y_image[0:-1] + y_image[1:])/2*Δx)
 
 	fig, (image_ax, kernel_ax, source_ax) = plt.subplots(3, 1, facecolor="none")
 
@@ -37,6 +37,27 @@ def main():
 	source_ax.set_ylim(0, None)
 
 	plt.tight_layout()
+
+	source_fit, = source_ax.plot(x_source, np.zeros_like(y_source), color="C1")
+	image_fit, = image_ax.plot(x_image, np.zeros_like(y_image), color="C1")
+	label = image_ax.text(0.95, 0.90, "",
+	                      horizontalalignment="right",
+	                      verticalalignment="top",
+	                      transform=image_ax.transAxes)
+	y_guess = np.full(x_source.shape, np.sum(y_data)/integrate.trapezoid(y_kernel, x_kernel)/(x_source[-1] - x_source[0]))
+	for i in range(6):
+		source_fit.set_ydata(y_guess)
+		image_fit.set_ydata(signal.convolve(y_guess, y_kernel*Δx, mode="full")*Δx)
+		if i == 0:
+			label.set_text(f"Initial guess")
+		elif i == 1:
+			label.set_text("1 iteration")
+		else:
+			label.set_text(f"{i} iterations")
+
+		y_guess = (y_guess + y_source)/2
+		plt.pause(1)
+
 	plt.show()
 
 
