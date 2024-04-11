@@ -8,6 +8,10 @@ from numpy.typing import NDArray
 from scipy import signal
 
 
+TRUTH_COLOR = "#da9fff"
+FIT_COLOR = "#7b0031"
+
+
 def main():
 	np.random.seed(1)
 
@@ -38,18 +42,24 @@ def main():
 
 	# set up the plotting axes
 	fig, (image_ax, kernel_ax, source_ax) = plt.subplots(3, 1, facecolor="none")
+	for ax in image_ax, kernel_ax, source_ax:
+		ax.set_xticks([])
+		ax.set_yticks([])
 
-	image_ax.fill_between(np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2))
+	image_ax.fill_between(np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2), color=TRUTH_COLOR)
 	image_ax.set_xlim(0, 5)
 	image_ax.set_ylim(0, None)
+	image_ax.set_ylabel("Measurement")
 
-	kernel_ax.fill_between(x_kernel, 0, y_kernel)
+	kernel_ax.fill_between(x_kernel, 0, y_kernel, color=TRUTH_COLOR)
 	kernel_ax.set_xlim(0, 5)
 	kernel_ax.set_ylim(0, None)
+	kernel_ax.set_ylabel("Point-spread function")
 
-	source_ax.fill_between(x_source, 0, y_source)
+	source_ax.fill_between(x_source, 0, y_source, color=TRUTH_COLOR)
 	source_ax.set_xlim(0, 5)
 	source_ax.set_ylim(0, None)
+	source_ax.set_ylabel("Object")
 
 	plt.tight_layout()
 
@@ -74,8 +84,8 @@ def main():
 	indices = indices[:np.argmin(error[indices]) + 2]  # stop after the rms error increases once
 
 	# then do the animation part
-	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), color="C1")
-	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image), color="C1")
+	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
+	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
 	label = image_ax.text(0.95, 0.90, "",
 	                      horizontalalignment="right",
 	                      verticalalignment="top",
@@ -90,7 +100,7 @@ def main():
 			label.set_text("1 iteration")
 		else:
 			label.set_text(f"{i} iterations")
-		plt.pause(.5)
+		plt.pause(.8)
 
 	plt.show()
 
