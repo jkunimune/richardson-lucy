@@ -60,20 +60,20 @@ def main():
 
 	kernel_ax.fill_between(
 		x_kernel, 0, y_kernel,
-		color=TRUTH_COLOR, edgecolor="none")
+		zorder=0, color=TRUTH_COLOR, edgecolor="none")
 	kernel_ax.set_ylim(0, None)
-	kernel_ax.set_title("Point-spread function", fontsize=FONT_SIZE)
+	kernel_ax.set_title("Impulse response function", fontsize=FONT_SIZE)
 
 	source_ax.fill_between(
 		x_source, 0, y_source,
-		color=TRUTH_COLOR, edgecolor="none")
+		zorder=0, color=TRUTH_COLOR, edgecolor="none")
 	source_ax.set_xlim(x_source[0], x_source[-1])
 	source_ax.set_ylim(0, None)
-	source_ax.set_title("Object", fontsize=FONT_SIZE)
+	source_ax.set_title("Signal", fontsize=FONT_SIZE)
 
 	image_ax.fill_between(
 		np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2),
-		color=TRUTH_COLOR, edgecolor="none")
+		zorder=0, color=TRUTH_COLOR, edgecolor="none")
 	image_ax.set_ylim(0, None)
 	image_ax.set_title("Measurement", fontsize=FONT_SIZE)
 
@@ -94,7 +94,7 @@ def main():
 	y_source_guesses = richardson_lucy(
 		transfer_matrix=source_to_data,
 		data=y_data,
-		initial_guess=np.full(x_source.shape, np.sum(y_data)/np.sum(y_kernel)/(x_source[-1] - x_source[0])),
+		initial_guess=np.full(x_source.shape, np.sum(y_data)/x_source.size),
 		num_iterations=indices[-1],
 	)
 
@@ -108,9 +108,12 @@ def main():
 	# then do the animation part
 	plt.savefig(f"results/frame-00.png", dpi=RESOLUTION)
 
-	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), linestyle="solid", color=FIT_COLOR, linewidth=1.5)
-	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image), linestyle="solid", color=FIT_COLOR, linewidth=1.5)
-	label = source_ax.text(0.98, 0.94, "",
+	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source),
+	                             zorder=2, linestyle="solid", color=FIT_COLOR, linewidth=1.5)
+	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image),
+	                           zorder=2, linestyle="solid", color=FIT_COLOR, linewidth=1.5)
+	label = source_ax.text(0.983, 0.940, "",
+	                       zorder=1,
 	                       fontsize=FONT_SIZE,
 	                       horizontalalignment="right",
 	                       verticalalignment="top",
