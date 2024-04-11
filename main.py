@@ -53,12 +53,25 @@ def main():
 
 	plt.tight_layout()
 
+	# come up with some nice round-ish exponentially-ish increasing indices
+	indices = np.concatenate([[0], np.round(1.59**np.arange(20)).astype(int)])
+	for factor in [1000, 500, 100, 50, 10, 5]:
+		high_enough = indices > 5*factor
+		indices[high_enough] = np.round(indices[high_enough]/factor).astype(int)*factor
+
 	# do the Richardson–lucy
 	y_source_guesses = richardson_lucy(
 		transfer_matrix=source_to_data,
 		data=y_data,
-		initial_guess=np.full(x_source.shape, np.sum(y_data)/np.sum(y_kernel)/(x_source[-1] - x_source[0]))
+		initial_guess=np.full(x_source.shape, np.sum(y_data)/np.sum(y_kernel)/(x_source[-1] - x_source[0])),
+		num_iterations=indices[-1],
 	)
+
+	# find an appropriate stopping point
+	error = np.array(
+		[np.sum((y_source_guess - y_source)**2) for y_source_guess in y_source_guesses]
+	)
+	indices = indices[:np.argmin(error[indices]) + 2]  # stop after the rms error increases once
 
 	# then do the animation part
 	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), color="C1")
@@ -67,7 +80,7 @@ def main():
 	                      horizontalalignment="right",
 	                      verticalalignment="top",
 	                      transform=image_ax.transAxes)
-	for i in range(y_source_guesses.shape[0]):
+	for i in indices:
 		y_image_guess = source_to_image @ y_source_guesses[i]
 		source_fit.set_ydata(y_source_guesses[i])
 		image_fit.set_ydata(y_image_guess)
@@ -77,12 +90,15 @@ def main():
 			label.set_text("1 iteration")
 		else:
 			label.set_text(f"{i} iterations")
-		plt.pause(.1)
+		plt.pause(.5)
 
 	plt.show()
 
 
-def richardson_lucy(transfer_matrix: NDArray[float], data: NDArray[float], initial_guess: NDArray[float]) -> NDArray[float]:
+def richardson_lucy(transfer_matrix: NDArray[float],
+                    data: NDArray[float],
+                    initial_guess: NDArray[float],
+                    num_iterations: int) -> NDArray[float]:
 	"""
 	apply the Richardson–Lucy deconvolution algorithm to the given measurement and point-spread
 	function, starting from the given starting point.
@@ -90,7 +106,7 @@ def richardson_lucy(transfer_matrix: NDArray[float], data: NDArray[float], initi
 	"""
 	guess = initial_guess
 	guesses = [guess]
-	for i in range(1000):
+	for i in range(num_iterations):
 		guess = guess * (transfer_matrix.T @ (data / (transfer_matrix @ guess)))
 		guesses.append(guess)
 	return np.array(guesses)
