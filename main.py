@@ -11,10 +11,7 @@ from scipy import signal
 def main():
 	np.random.seed(1)
 
-	x_kernel = np.linspace(0, 6, 201)
-	Δx = x_kernel[1] - x_kernel[0]
-	y_kernel = shoe_curve(x_kernel, 0.2, 0.4, +0.6, 1)
-
+	# define the source
 	x_source = np.linspace(0, 3, 101)
 	y_source = 500*(
 			bell_curve(x_source, 0.3, 0.6, 4) +
@@ -22,7 +19,10 @@ def main():
 			shoe_curve(x_source, 2.2, 0.6, -0.5, 3)
 	)
 
-	x_image = np.concatenate([x_kernel[:-1], x_kernel[-1] + x_source])
+	# define the point-spread function
+	x_kernel = np.linspace(0, 6, 201)
+	Δx = x_kernel[1] - x_kernel[0]
+	y_kernel = shoe_curve(x_kernel, 0.2, 0.4, +0.6, 1)
 
 	# define the point-spread function as a matrix
 	source_to_image = np.transpose(
@@ -31,8 +31,12 @@ def main():
 	source_to_data = (source_to_image[0:-1] + source_to_image[1:])/2
 	source_to_image = source_to_image/np.sum(source_to_data, axis=0, keepdims=True)
 	source_to_data = source_to_data/np.sum(source_to_data, axis=0, keepdims=True)
+
+	# generate the data
+	x_image = np.concatenate([x_kernel[:-1], x_kernel[-1] + x_source])
 	y_data = np.random.poisson(source_to_data @ y_source)
 
+	# set up the plotting axes
 	fig, (image_ax, kernel_ax, source_ax) = plt.subplots(3, 1, facecolor="none")
 
 	image_ax.fill_between(np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2))
@@ -49,6 +53,13 @@ def main():
 
 	plt.tight_layout()
 
+	# do the Richardson–lucy
+	y_source_guesses = richardson_lucy(
+		transfer_matrix=source_to_data,
+		data=y_data,
+		initial_guess=np.full(x_source.shape, np.sum(y_data)/np.sum(y_kernel)/(x_source[-1] - x_source[0]))
+	)
+
 	# then do the animation part
 	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), color="C1")
 	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image), color="C1")
@@ -56,14 +67,9 @@ def main():
 	                      horizontalalignment="right",
 	                      verticalalignment="top",
 	                      transform=image_ax.transAxes)
-	y_source_guess = np.full(x_source.shape, np.sum(y_data)/np.sum(y_kernel)/(x_source[-1] - x_source[0]))
-	for i in range(1000):
-		# refresh the values dependent on the current source guess
-		y_image_guess = source_to_image @ y_source_guess
-		y_data_guess = source_to_data @ y_source_guess
-
-		# update the plot
-		source_fit.set_ydata(y_source_guess)
+	for i in range(y_source_guesses.shape[0]):
+		y_image_guess = source_to_image @ y_source_guesses[i]
+		source_fit.set_ydata(y_source_guesses[i])
 		image_fit.set_ydata(y_image_guess)
 		if i == 0:
 			label.set_text(f"Initial guess")
@@ -71,12 +77,23 @@ def main():
 			label.set_text("1 iteration")
 		else:
 			label.set_text(f"{i} iterations")
-
-		# Richardson–Lucy step
-		y_source_guess = y_source_guess * (source_to_data.T @ (y_data/y_data_guess))
 		plt.pause(.1)
 
 	plt.show()
+
+
+def richardson_lucy(transfer_matrix: NDArray[float], data: NDArray[float], initial_guess: NDArray[float]) -> NDArray[float]:
+	"""
+	apply the Richardson–Lucy deconvolution algorithm to the given measurement and point-spread
+	function, starting from the given starting point.
+	:return: all the intermediate sources
+	"""
+	guess = initial_guess
+	guesses = [guess]
+	for i in range(1000):
+		guess = guess * (transfer_matrix.T @ (data / (transfer_matrix @ guess)))
+		guesses.append(guess)
+	return np.array(guesses)
 
 
 def bell_curve(x: NDArray[float], x0: float, width: float, height: float) -> NDArray[float]:
