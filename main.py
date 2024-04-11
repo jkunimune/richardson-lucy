@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from scipy import signal
 
 
-TRUTH_COLOR = "#da9fff"
+TRUTH_COLOR = "#ff9444"
 FIT_COLOR = "#7b0031"
 
 
