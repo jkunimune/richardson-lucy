@@ -52,17 +52,23 @@ def main():
 		ax.set_xticks([])
 		ax.set_yticks([])
 
-	image_ax.fill_between(np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2), color=TRUTH_COLOR)
+	image_ax.fill_between(
+		np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2),
+		color=TRUTH_COLOR, edgecolor="none")
 	image_ax.set_xlim(0, 5)
 	image_ax.set_ylim(0, None)
 	image_ax.set_ylabel("Measurement")
 
-	kernel_ax.fill_between(x_kernel, 0, y_kernel, color=TRUTH_COLOR)
+	kernel_ax.fill_between(
+		x_kernel, 0, y_kernel,
+		color=TRUTH_COLOR, edgecolor="none")
 	kernel_ax.set_xlim(0, 5)
 	kernel_ax.set_ylim(0, None)
 	kernel_ax.set_ylabel("Point-spread function")
 
-	source_ax.fill_between(x_source, 0, y_source, color=TRUTH_COLOR)
+	source_ax.fill_between(
+		x_source, 0, y_source,
+		color=TRUTH_COLOR, edgecolor="none")
 	source_ax.set_xlim(0, 5)
 	source_ax.set_ylim(0, None)
 	source_ax.set_ylabel("Object")
