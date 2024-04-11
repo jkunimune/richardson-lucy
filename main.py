@@ -23,7 +23,7 @@ def main():
 	os.makedirs("results", exist_ok=True)
 
 	# define the source
-	x_source = np.linspace(0, 3, 101)
+	x_source = np.linspace(0, 2.5, 101)
 	y_source = 500*(
 			bell_curve(x_source, 0.3, 0.6, 4) +
 			bell_curve(x_source, 0.7, 0.6, 2) +
@@ -31,7 +31,7 @@ def main():
 	)
 
 	# define the point-spread function
-	x_kernel = np.linspace(0, 6, 201)
+	x_kernel = np.linspace(0, 5.0, 201)
 	Δx = x_kernel[1] - x_kernel[0]
 	y_kernel = shoe_curve(x_kernel, 0.2, 0.4, +0.6, 1)
 
@@ -109,10 +109,10 @@ def main():
 
 	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
 	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
-	label = image_ax.text(0.01, 0.94, "",
-	                      horizontalalignment="left",
-	                      verticalalignment="top",
-	                      transform=image_ax.transAxes)
+	label = source_ax.text(0.99, 0.94, "",
+	                       horizontalalignment="right",
+	                       verticalalignment="top",
+	                       transform=source_ax.transAxes)
 	for i, j in enumerate(indices):
 		y_image_guess = source_to_image @ y_source_guesses[j]
 		source_fit.set_ydata(y_source_guesses[j])
