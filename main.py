@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 from scipy import signal
 
 
-FRAME_DURATION = 0.8
+FRAME_DURATION = 0.7
 TRUTH_COLOR = "#ff9444"
 FIT_COLOR = "#7b0031"
 
@@ -93,7 +93,8 @@ def main():
 	error = np.array(
 		[np.sum((y_source_guess - y_source)**2) for y_source_guess in y_source_guesses]
 	)
-	indices = indices[:np.argmin(error[indices]) + 2]  # stop after the rms error increases once
+	num_good_indices = np.argmin(error[indices]) + 1
+	num_indices = indices.size
 
 	# then do the animation part
 	plt.savefig(f"results/frame-00.png", dpi=80)
@@ -117,7 +118,10 @@ def main():
 		plt.pause(.01)
 		plt.savefig(f"results/frame-{i + 1:02d}.png", dpi=80)
 
-	make_gif(1 + len(indices), 1/FRAME_DURATION)
+	# save a GIF that stops just past the optimal iteration
+	make_gif(num_good_indices + 2, 1/FRAME_DURATION)
+	# and one that goes noticeably farther
+	make_gif(num_indices + 1, 1.5/FRAME_DURATION)
 
 	plt.show()
 
@@ -173,8 +177,8 @@ def make_gif(num_frames: int, frame_rate: float):
 	# make the last frame twice as long
 	frames.append(frames[-1])
 	# save it all as a GIF
-	mimsave(f"results/animation.gif", frames, fps=frame_rate)
-	print(f"saved 'results/animation.gif'!")
+	mimsave(f"results/animation-{num_frames}.gif", frames, fps=frame_rate)
+	print(f"saved 'results/animation-{num_frames}.gif'!")
 
 
 if __name__ == "__main__":
