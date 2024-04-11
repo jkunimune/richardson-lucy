@@ -9,17 +9,17 @@ from scipy import signal
 
 
 def main():
-	np.random.seed(0)
+	np.random.seed(1)
 
 	x_kernel = np.linspace(0, 6, 201)
 	Δx = x_kernel[1] - x_kernel[0]
-	y_kernel = shoe_curve(x_kernel, 0.5, 1.0, +0.8, 1)
+	y_kernel = shoe_curve(x_kernel, 0.2, 0.4, +0.6, 1)
 
 	x_source = np.linspace(0, 3, 101)
-	y_source = 1000*(
+	y_source = 500*(
 			bell_curve(x_source, 0.3, 0.6, 4) +
-			bell_curve(x_source, 0.7, 0.8, 2) +
-			shoe_curve(x_source, 2.4, 1.2, -0.6, 3)
+			bell_curve(x_source, 0.7, 0.6, 2) +
+			shoe_curve(x_source, 2.2, 0.6, -0.5, 3)
 	)
 
 	x_image = np.concatenate([x_kernel[:-1], x_kernel[-1] + x_source])
@@ -57,7 +57,7 @@ def main():
 	                      verticalalignment="top",
 	                      transform=image_ax.transAxes)
 	y_source_guess = np.full(x_source.shape, np.sum(y_data)/np.sum(y_kernel)/(x_source[-1] - x_source[0]))
-	for i in range(100):
+	for i in range(1000):
 		# refresh the values dependent on the current source guess
 		y_image_guess = source_to_image @ y_source_guess
 		y_data_guess = source_to_data @ y_source_guess
