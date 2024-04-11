@@ -11,9 +11,10 @@ from imageio.v3 import imread
 from numpy.typing import NDArray
 from scipy import signal
 
-
 FRAME_DURATION = 0.7
-RESOLUTION = 100
+RESOLUTION = 90
+FIGURE_SIZE = (7.0, 3.5)
+FONT_SIZE = 15
 TRUTH_COLOR = "#ff9444"
 FIT_COLOR = "#7b0031"
 
@@ -48,7 +49,7 @@ def main():
 	y_data = np.random.poisson(source_to_data @ y_source)
 
 	# set up the plotting axes
-	fig = plt.figure(facecolor="none", figsize=(5.0, 2.5))
+	fig = plt.figure(facecolor="none", figsize=FIGURE_SIZE)
 	grid = fig.add_gridspec(2, 2)
 	source_ax = fig.add_subplot(grid[0, 0])
 	kernel_ax = fig.add_subplot(grid[0, 1])
@@ -61,20 +62,20 @@ def main():
 		x_kernel, 0, y_kernel,
 		color=TRUTH_COLOR, edgecolor="none")
 	kernel_ax.set_ylim(0, None)
-	kernel_ax.set_title("Point-spread function")
+	kernel_ax.set_title("Point-spread function", fontsize=FONT_SIZE)
 
 	source_ax.fill_between(
 		x_source, 0, y_source,
 		color=TRUTH_COLOR, edgecolor="none")
 	source_ax.set_xlim(x_source[0], x_source[-1])
 	source_ax.set_ylim(0, None)
-	source_ax.set_title("Object")
+	source_ax.set_title("Object", fontsize=FONT_SIZE)
 
 	image_ax.fill_between(
 		np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2),
 		color=TRUTH_COLOR, edgecolor="none")
 	image_ax.set_ylim(0, None)
-	image_ax.set_title("Measurement")
+	image_ax.set_title("Measurement", fontsize=FONT_SIZE)
 
 	plt.tight_layout()
 	source_ax_width = source_ax.get_window_extent().width
@@ -107,9 +108,10 @@ def main():
 	# then do the animation part
 	plt.savefig(f"results/frame-00.png", dpi=RESOLUTION)
 
-	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
-	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
-	label = source_ax.text(0.99, 0.94, "",
+	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), linestyle="solid", color=FIT_COLOR, linewidth=1.5)
+	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image), linestyle="solid", color=FIT_COLOR, linewidth=1.5)
+	label = source_ax.text(0.98, 0.94, "",
+	                       fontsize=FONT_SIZE,
 	                       horizontalalignment="right",
 	                       verticalalignment="top",
 	                       transform=source_ax.transAxes)
