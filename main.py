@@ -13,6 +13,7 @@ from scipy import signal
 
 
 FRAME_DURATION = 0.7
+RESOLUTION = 100
 TRUTH_COLOR = "#ff9444"
 FIT_COLOR = "#7b0031"
 
@@ -47,33 +48,40 @@ def main():
 	y_data = np.random.poisson(source_to_data @ y_source)
 
 	# set up the plotting axes
-	fig, (image_ax, kernel_ax, source_ax) = plt.subplots(3, 1, facecolor="none")
+	fig = plt.figure(facecolor="none", figsize=(5.0, 2.5))
+	grid = fig.add_gridspec(2, 2)
+	source_ax = fig.add_subplot(grid[0, 0])
+	kernel_ax = fig.add_subplot(grid[0, 1])
+	image_ax = fig.add_subplot(grid[1, :])
 	for ax in image_ax, kernel_ax, source_ax:
 		ax.set_xticks([])
 		ax.set_yticks([])
 
-	image_ax.fill_between(
-		np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2),
-		color=TRUTH_COLOR, edgecolor="none")
-	image_ax.set_xlim(0, 5)
-	image_ax.set_ylim(0, None)
-	image_ax.set_ylabel("Measurement")
-
 	kernel_ax.fill_between(
 		x_kernel, 0, y_kernel,
 		color=TRUTH_COLOR, edgecolor="none")
-	kernel_ax.set_xlim(0, 5)
 	kernel_ax.set_ylim(0, None)
-	kernel_ax.set_ylabel("Point-spread function")
+	kernel_ax.set_title("Point-spread function")
 
 	source_ax.fill_between(
 		x_source, 0, y_source,
 		color=TRUTH_COLOR, edgecolor="none")
-	source_ax.set_xlim(0, 5)
+	source_ax.set_xlim(x_source[0], x_source[-1])
 	source_ax.set_ylim(0, None)
-	source_ax.set_ylabel("Object")
+	source_ax.set_title("Object")
+
+	image_ax.fill_between(
+		np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2),
+		color=TRUTH_COLOR, edgecolor="none")
+	image_ax.set_ylim(0, None)
+	image_ax.set_title("Measurement")
 
 	plt.tight_layout()
+	source_ax_width = source_ax.get_window_extent().width
+	kernel_ax_width = kernel_ax.get_window_extent().width
+	kernel_ax.set_xlim(0, kernel_ax_width/source_ax_width*x_source[-1])
+	image_ax_width = image_ax.get_window_extent().width
+	image_ax.set_xlim(0, image_ax_width/source_ax_width*x_source[-1])
 
 	# come up with some nice round-ish exponentially-ish increasing indices
 	indices = np.concatenate([[0], np.round(1.59**np.arange(20)).astype(int)])
@@ -97,12 +105,12 @@ def main():
 	num_indices = indices.size
 
 	# then do the animation part
-	plt.savefig(f"results/frame-00.png", dpi=80)
+	plt.savefig(f"results/frame-00.png", dpi=RESOLUTION)
 
 	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
 	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
-	label = image_ax.text(0.95, 0.90, "",
-	                      horizontalalignment="right",
+	label = image_ax.text(0.01, 0.94, "",
+	                      horizontalalignment="left",
 	                      verticalalignment="top",
 	                      transform=image_ax.transAxes)
 	for i, j in enumerate(indices):
@@ -116,7 +124,7 @@ def main():
 		else:
 			label.set_text(f"{j} iterations")
 		plt.pause(.01)
-		plt.savefig(f"results/frame-{i + 1:02d}.png", dpi=80)
+		plt.savefig(f"results/frame-{i + 1:02d}.png", dpi=RESOLUTION)
 
 	# save a GIF that stops just past the optimal iteration
 	make_gif(num_good_indices + 2, 1/FRAME_DURATION)
