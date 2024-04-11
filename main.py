@@ -2,18 +2,24 @@
 This work by Justin Kunimune is marked with CC0 1.0 Universal.
 To view a copy of this license, visit <https://creativecommons.org/publicdomain/zero/1.0>.
 """
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
+from imageio.v2 import mimsave
+from imageio.v3 import imread
 from numpy.typing import NDArray
 from scipy import signal
 
 
+FRAME_DURATION = 0.8
 TRUTH_COLOR = "#ff9444"
 FIT_COLOR = "#7b0031"
 
 
 def main():
 	np.random.seed(1)
+	os.makedirs("results", exist_ok=True)
 
 	# define the source
 	x_source = np.linspace(0, 3, 101)
@@ -84,23 +90,28 @@ def main():
 	indices = indices[:np.argmin(error[indices]) + 2]  # stop after the rms error increases once
 
 	# then do the animation part
+	plt.savefig(f"results/frame-00.png", dpi=80)
+
 	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
 	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image), linestyle="dashed", color=FIT_COLOR, linewidth=1.5)
 	label = image_ax.text(0.95, 0.90, "",
 	                      horizontalalignment="right",
 	                      verticalalignment="top",
 	                      transform=image_ax.transAxes)
-	for i in indices:
-		y_image_guess = source_to_image @ y_source_guesses[i]
-		source_fit.set_ydata(y_source_guesses[i])
+	for i, j in enumerate(indices):
+		y_image_guess = source_to_image @ y_source_guesses[j]
+		source_fit.set_ydata(y_source_guesses[j])
 		image_fit.set_ydata(y_image_guess)
-		if i == 0:
+		if j == 0:
 			label.set_text(f"Initial guess")
-		elif i == 1:
+		elif j == 1:
 			label.set_text("1 iteration")
 		else:
-			label.set_text(f"{i} iterations")
-		plt.pause(.8)
+			label.set_text(f"{j} iterations")
+		plt.pause(.01)
+		plt.savefig(f"results/frame-{i + 1:02d}.png", dpi=80)
+
+	make_gif(1 + len(indices), 1/FRAME_DURATION)
 
 	plt.show()
 
@@ -141,6 +152,23 @@ def shoe_curve(x: NDArray[float], x0: float, bell_width: float, tail_length: flo
 	kernel = bell_curve(x, (x[-1] + x[0])/2, bell_width, 1)
 	result = signal.convolve(base, kernel, mode="same")
 	return result/np.max(result)*height
+
+
+def make_gif(num_frames: int, frame_rate: float):
+	""" load the images from frames/ and compile them into an animated GIF """
+	# load each frame and put them in a list
+	frames = []
+	for i in range(num_frames):
+		frame = imread(f"results/frame-{i:02d}.png")
+		rgb = frame[:, :, :3]
+		alpha = frame[:, :, 3, np.newaxis]/255.
+		frame = (rgb*alpha + 255*(1 - alpha)).astype(np.uint8) # remove transparency with a white background
+		frames.append(frame)
+	# make the last frame twice as long
+	frames.append(frames[-1])
+	# save it all as a GIF
+	mimsave(f"results/animation.gif", frames, fps=frame_rate)
+	print(f"saved 'results/animation.gif'!")
 
 
 if __name__ == "__main__":
