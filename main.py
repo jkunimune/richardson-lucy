@@ -13,10 +13,9 @@ from scipy import signal
 
 FRAME_DURATION = 0.7
 RESOLUTION = 90
-FIGURE_SIZE = (7.0, 3.5)
+FIGURE_SIZE = (6.0, 4.0)
 FONT_SIZE = 15
-TRUTH_COLOR = "#ff9444"
-FIT_COLOR = "#7b0031"
+COLOR = "#7b0031"
 
 
 def main():
@@ -41,7 +40,6 @@ def main():
 		[signal.convolve(y, y_kernel, mode="full")*Δx for y in np.eye(x_source.size)]
 	)
 	source_to_data = (source_to_image[0:-1] + source_to_image[1:])/2
-	source_to_image = source_to_image/np.sum(source_to_data, axis=0, keepdims=True)
 	source_to_data = source_to_data/np.sum(source_to_data, axis=0, keepdims=True)
 
 	# generate the data
@@ -50,42 +48,36 @@ def main():
 
 	# set up the plotting axes
 	fig = plt.figure(facecolor="none", figsize=FIGURE_SIZE)
-	grid = fig.add_gridspec(2, 2)
-	source_ax = fig.add_subplot(grid[0, 0])
-	kernel_ax = fig.add_subplot(grid[0, 1])
-	image_ax = fig.add_subplot(grid[1, :])
-	for ax in image_ax, kernel_ax, source_ax:
+	grid = fig.add_gridspec(3, 1)
+	truth_ax = fig.add_subplot(grid[0])
+	image_ax = fig.add_subplot(grid[1])
+	recon_ax = fig.add_subplot(grid[2])
+	for ax in truth_ax, image_ax, recon_ax:
 		ax.set_xticks([])
 		ax.set_yticks([])
 
-	kernel_ax.fill_between(
-		x_kernel, 0, y_kernel,
-		zorder=0, color=TRUTH_COLOR, edgecolor="none")
-	kernel_ax.set_ylim(0, None)
-	kernel_ax.set_title("Impulse response function", fontsize=FONT_SIZE)
-
-	source_ax.fill_between(
+	truth_ax.fill_between(
 		x_source, 0, y_source,
-		zorder=0, color=TRUTH_COLOR, edgecolor="none")
-	source_ax.set_xlim(x_source[0], x_source[-1])
-	source_ax.set_ylim(0, None)
-	source_ax.set_title("Signal", fontsize=FONT_SIZE)
+		zorder=0, color=COLOR, edgecolor="none")
+	truth_ax.set_xlim(x_source[0], x_source[-1]*1.3)
+	truth_ax.set_ylim(0, None)
+	truth_ax.set_title("True signal", fontsize=FONT_SIZE)
 
 	image_ax.fill_between(
 		np.repeat(x_image, 2)[1:-1], 0, np.repeat(y_data, 2),
-		zorder=0, color=TRUTH_COLOR, edgecolor="none")
+		zorder=0, color=COLOR, edgecolor="none")
+	image_ax.set_xlim(x_source[0] + 0.2, x_source[-1]*1.3 + 0.2)
 	image_ax.set_ylim(0, None)
 	image_ax.set_title("Measurement", fontsize=FONT_SIZE)
 
+	recon_ax.set_xlim(x_source[0], x_source[-1]*1.3)
+	recon_ax.set_ylim(*truth_ax.get_ylim())
+	recon_ax.set_title("Inferred signal", fontsize=FONT_SIZE)
+
 	plt.tight_layout()
-	source_ax_width = source_ax.get_window_extent().width
-	kernel_ax_width = kernel_ax.get_window_extent().width
-	kernel_ax.set_xlim(0, kernel_ax_width/source_ax_width*x_source[-1])
-	image_ax_width = image_ax.get_window_extent().width
-	image_ax.set_xlim(0, image_ax_width/source_ax_width*x_source[-1])
 
 	# come up with some nice round-ish exponentially-ish increasing indices
-	indices = np.concatenate([[0], np.round(1.59**np.arange(20)).astype(int)])
+	indices = np.concatenate([[0], np.round(1.59**np.arange(21)).astype(int)])
 	for factor in [1000, 500, 100, 50, 10, 5]:
 		high_enough = indices > 5*factor
 		indices[high_enough] = np.round(indices[high_enough]/factor).astype(int)*factor
@@ -108,20 +100,19 @@ def main():
 	# then do the animation part
 	plt.savefig(f"results/frame-00.png", dpi=RESOLUTION)
 
-	source_fit, = source_ax.plot(x_source, np.zeros_like(x_source),
-	                             zorder=2, linestyle="solid", color=FIT_COLOR, linewidth=1.5)
-	image_fit, = image_ax.plot(x_image, np.zeros_like(x_image),
-	                           zorder=2, linestyle="solid", color=FIT_COLOR, linewidth=1.5)
-	label = source_ax.text(0.983, 0.940, "",
-	                       zorder=1,
-	                       fontsize=FONT_SIZE,
-	                       horizontalalignment="right",
-	                       verticalalignment="top",
-	                       transform=source_ax.transAxes)
+	recon_histogram = recon_ax.fill_between(x_source, 0, np.zeros_like(x_source),
+	                                        zorder=2, color=COLOR, edgecolor="none")
+	label = recon_ax.text(0.983, 0.940, "",
+	                      zorder=1,
+	                      fontsize=FONT_SIZE,
+	                      horizontalalignment="right",
+	                      verticalalignment="top",
+	                      transform=recon_ax.transAxes)
 	for i, j in enumerate(indices):
-		y_image_guess = source_to_image @ y_source_guesses[j]
-		source_fit.set_ydata(y_source_guesses[j])
-		image_fit.set_ydata(y_image_guess)
+		recon_histogram.set_paths([np.transpose([
+			np.concatenate([x_source, x_source[::-1]]),
+			np.concatenate([y_source_guesses[j], np.zeros_like(y_source)])
+		])])
 		if j == 0:
 			label.set_text(f"Initial guess")
 		elif j == 1:
