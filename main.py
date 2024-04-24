@@ -178,8 +178,8 @@ def make_gif(num_frames: int, frame_rate: float):
 		alpha = frame[:, :, 3, np.newaxis]/255.
 		frame = (rgb*alpha + 255*(1 - alpha)).astype(np.uint8) # remove transparency with a white background
 		frames.append(frame)
-	# make the last frame twice as long
-	frames.append(frames[-1])
+	# make it start with the last frame
+	frames.insert(0, frames[-1])
 	# save it all as a GIF
 	mimsave(f"results/animation-{num_frames}.gif", frames, fps=frame_rate)
 	print(f"saved 'results/animation-{num_frames}.gif'!")
